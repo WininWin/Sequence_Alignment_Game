@@ -38,7 +38,8 @@
 /** @public */var current_level_length;
 /** @public */var current_level_prob;
 /** @public */var current_level_delete_count;
-
+/** @public */var USE_SCORE_TABLE = 0;
+/** @public */var score_table;
 
 /**
  * Make DNA column for sequence table  
@@ -154,7 +155,7 @@ DNA_sequence_table.prototype.create = function(ori, mut){
 	}
 
 	//find the optimal score matrix for two sequences 
-	sequence_matrix = get_maximum_seq_alignment_score(this.origin, this.mutate, match_score, mismatch_score, gap_penalty);
+	sequence_matrix = get_maximum_seq_alignment_score(this.origin, this.mutate, match_score, mismatch_score, gap_penalty, USE_SCORE_TABLE, score_table);
 	//get optimal score from the matrix
 	maximum_score = sequence_matrix.table[this.mutate.length][this.origin.length];
 	$("#info4").text("Max Score : " + maximum_score);
@@ -202,7 +203,16 @@ DNA_sequence_table.prototype.calculate = function(){
 			var origin_item = ORIGIN_NAME + i + " .letter_background";
 			var mutate_item = MUTATE_NAME + i + " .letter_background";
 
+			
+
 			if(!is_undefined(this.origin[i]) && !is_undefined(this.mutate[i])){
+				
+				//USE score table
+				if(USE_SCORE_TABLE && (this.origin[i] !== '-' && this.mutate[i] !== '-')){
+					match_score = score_table[this.origin[i]][this.mutate[i]];
+					mismatch_score = score_table[this.origin[i]][this.mutate[i]];
+				}
+
 				if(this.origin[i] === this.mutate[i]){
 
 					//Does not allow to have '-' in both seq
@@ -659,6 +669,8 @@ function level_change(target, table, length, prob, delete_num){
 		target.addClass("active");
 }
 
+	
+
 /**
  * Main Function 
  */
@@ -666,7 +678,9 @@ function init(){
 
 	//show timer
 	 time_show();
-
+	 $("#score_table").hide();
+	 $("#change_score_table").hide();
+	 $("#use_fixed_score").hide();
 	 //set initial level 
 	 current_level_length = LEVLE_ONE_LENGTH;
 	 current_level_prob = LEVLE_ONE_MUTATE_SAME;
@@ -685,6 +699,24 @@ function init(){
 	
 	$("#seq_one_str").text("Sequence One : " + seq1);
 	$("#seq_two_str").text("Sequence Two : " + seq2);
+
+
+	//get score_table
+	score_table = get_score_table();
+	for(var key in score_table){
+			$("#score_table_body").append("<tr id=\'row" + key + "\'><th class = \'letter" + key + "\'>"+ key +"</th></tr>");
+			for(var inner_key in score_table[key]){
+				$("#row"+key).append('<td><input id = \"input'+ key + inner_key + '\"type=\"number\" value=\"'+ score_table[key][inner_key] + '\"></td>');
+				
+				(function(key1, key2){
+					$("#input" + key1 + key2).change(function(){
+
+					$("#input" + key2 + key1).val($("#input" + key1 + key2).val());
+				});
+				})(key, inner_key);
+					
+			}
+	}
 
 	//create table 
 	table.create(seq1, seq2);
@@ -728,7 +760,67 @@ function init(){
 
 	});
 
+	$('#use_score_talbe').on('click', function(){
+		$('#use_score_talbe').hide();
+		$('#change_score_table').show();
+		USE_SCORE_TABLE = 1;
+		$("#info1").hide();
+		$("#info2").hide();
+		$("#score_table").show();
+		$("#use_fixed_score").show();
+		time_start();
+		recreate(table);
+	});
+
+	$('#use_fixed_score').on('click', function(){
+		$('#use_score_talbe').show();
+		$('#change_score_table').hide();
+		USE_SCORE_TABLE = 0;
+		$("#info1").show();
+		$("#info2").show();
+		$("#score_table").hide();
+		$("#use_fixed_score").hide();
+		time_start();
+		recreate(table);
+	});
 	
+	$("#change_score_table").on('click', function(){
+		var not_positive_on_diag = 0;
+		var not_negative_on_other = 0;
+
+		for(var key in score_table){
+			for(var inner_key in score_table){
+				score_table[key][inner_key] = parseInt($("#input" + key + inner_key).val());
+				if(key == inner_key){
+					if($("#input" + key + inner_key).val() < 0){
+						not_positive_on_diag = 1;
+						break;
+					}
+				}
+				else{
+					if($("#input" + key + inner_key).val() > 0 ){
+						not_negative_on_other = 1;
+						break;
+					}
+				}
+
+			}
+		}
+
+		if(not_positive_on_diag){
+			$("#result").hide().text("The diagonal elements should be constrained to be positive").fadeIn('slow').delay(1500).fadeOut('slow');
+		}
+		else if(not_negative_on_other){
+			$("#result").hide().text("The off-diagnoal elements should be constrained to be negative").fadeIn('slow').delay(1500).fadeOut('slow');
+
+		}
+
+		else{
+			time_start();
+			recreate(table);
+		}
+
+	});
 
 
 }

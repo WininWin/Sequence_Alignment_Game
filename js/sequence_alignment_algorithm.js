@@ -131,7 +131,7 @@ function make_sequence(seq_len){
  * @param {Number} gap score
  * @return {Object} matrix 
  */
-function get_maximum_seq_alignment_score (seq1, seq2, match_score, mismatch_score, gap_score) {
+function get_maximum_seq_alignment_score (seq1, seq2, match_score, mismatch_score, gap_score, USE_SCORE_TABLE, score_table) {
 
 
 	var M = seq1.length+1;
@@ -162,6 +162,10 @@ function get_maximum_seq_alignment_score (seq1, seq2, match_score, mismatch_scor
 	var i,j;
 	for(i = 1; i < N;i++){
 		for(j = 1; j < M;j++){
+			if(USE_SCORE_TABLE){
+				s = score_table[seq1[j-1]][seq2[i-1]];
+				ms = score_table[seq1[j-1]][seq2[i-1]];
+			}
 
 			var score = (seq2[i-1]===seq1[j-1])?s:ms;
 			var fill_score = Math.max(matrix.table[i-1][j-1]+score, matrix.table[i][j-1]+gs, matrix.table[i-1][j]+gs);
@@ -182,5 +186,42 @@ function get_maximum_seq_alignment_score (seq1, seq2, match_score, mismatch_scor
 
 	return matrix;
 
+
+}
+
+function get_score_table(){
+	var score_table = 
+	{
+		'A' : {
+			'A': 20,
+			'C': -20,
+			'G':-10,
+			'T':-20
+		},
+		'C' : {
+			'A': -20,
+			'C': 20,
+			'G':-20,
+			'T':-10
+		},
+		'G' : {
+			'A': -10,
+			'C': -20,
+			'G':20,
+			'T':-20
+		},
+		'T' : {
+			'A': -20,
+			'C': -10,
+			'G':-20,
+			'T': 20
+		}
+
+
+
+
+	};
+
+	return score_table;
 
 }
