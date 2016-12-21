@@ -412,7 +412,7 @@ function check_game_end_condition(score){
 
 /**
  * Control gap insert or remove by mouse, it will add gap if the sequence moves to right, and remove gap if 
- * sequnce moves to left and there is a gap at left. 
+ * sequence moves to left and there is a gap at left. 
  * @param {Number} previous x position of the item 
  * @param {Number} current x position of the item 
  * @param {DNA_sequence_table} DNA_sequence_table
